@@ -1,0 +1,95 @@
+import logging
+import uuid
+import datetime
+
+from aiogram import Bot, Dispatcher, types
+from aiogram.contrib.middlewares.logging import LoggingMiddleware
+from aiogram.types import ParseMode
+from aiogram.utils import executor
+import asyncpg
+import asyncio
+
+API_TOKEN = '7419786460:AAGfm9c6UTMq7UIllikhbUQxg0vfGjD-5dU'
+DB_HOST = 'postgres'
+DB_USER = 'postgres'
+DB_PASSWORD = 'postgres'
+DB_NAME = 'postgres'
+
+# Настройка логирования
+logging.basicConfig(level=logging.INFO)
+
+# Инициализация бота и диспетчера
+bot = Bot(token=API_TOKEN)
+dp = Dispatcher(bot)
+dp.middleware.setup(LoggingMiddleware())
+
+
+# Функция для подключения к базе данных
+async def create_db_pool():
+    return await asyncpg.create_pool(
+        user=DB_USER,
+        password=DB_PASSWORD,
+        database=DB_NAME,
+        host=DB_HOST
+    )
+
+
+# Подключение к базе данных
+async def on_startup(dispatcher):
+    dispatcher['db'] = await create_db_pool()
+    print('Bot Started')
+
+
+# Функция для сохранения сообщения в базу данных
+async def save_message(db_pool, user_id):
+    async with db_pool.acquire() as connection:
+        try:
+            await connection.execute(
+                'INSERT INTO users_chatmessage (id, created_at, user_id) VALUES ($1, $2, $3)',
+                uuid.uuid4(),
+                datetime.datetime.now(),
+                user_id
+            )
+        except Exception as e:
+            logging.error(e)
+
+
+async def get_user(db_pool, user_id):
+    async with db_pool.acquire() as connection:
+        try:
+            user = await connection.fetchrow('SELECT * FROM users_chatuser WHERE user_id = $1', user_id)
+
+            if not user:
+                return None
+
+            return user
+        except Exception as e:
+            logging.error(e)
+            return None
+
+
+async def create_user(db_pool, username, user_id):
+    async with db_pool.acquire() as connection:
+        try:
+            await connection.execute('INSERT INTO users_chatuser (id, username, user_id, created_at) VALUES ($3, $1, $2, $4)', username, user_id, uuid.uuid4(), datetime.datetime.now())
+        except Exception as e:
+            logging.error(e)
+
+
+# Обработчик всех текстовых сообщений
+@dp.message_handler(content_types=types.ContentType.TEXT)
+async def handle_text_message(message: types.Message):
+    db_pool = dp['db']
+    user = await get_user(db_pool, message.from_user.id)
+    if not user:
+        await create_user(db_pool, message.from_user.username, message.from_user.id)
+    user = await get_user(db_pool, message.from_user.id)
+
+    await save_message(db_pool, user['id'])
+
+
+# Запуск бота
+if __name__ == '__main__':
+    from aiogram import executor
+
+    executor.start_polling(dp, on_startup=on_startup)
