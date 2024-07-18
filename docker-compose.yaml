@@ -39,8 +39,6 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
-      DJANGO_SECRET_KEY: 'django-insecure-4v0l$*o$y5uy9vgj)6pl^1es*pw!acsd8$)2r3fk1b@u+ahyiv'
-      DJANGO_DEBUG: 'False'  # Установите в 'False' для продакшн среды
     volumes:
       - ./bot_admin:/usr/src/app
     ports:
