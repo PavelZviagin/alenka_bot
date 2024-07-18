@@ -4,7 +4,7 @@ import datetime
 
 from aiogram import Bot, Dispatcher, types
 from aiogram.contrib.middlewares.logging import LoggingMiddleware
-from aiogram.types import ParseMode
+from aiogram.types import ParseMode, ContentType
 from aiogram.utils import executor
 import asyncpg
 import asyncio
@@ -40,6 +40,24 @@ async def on_startup(dispatcher):
     print('Bot Started')
 
 
+@dp.message_handler(content_types=ContentType.NEW_CHAT_MEMBERS)
+async def on_user_join(message: types.Message):
+    try:
+        logging.warning(f'User {message.from_user.id} joined chat {message.chat.id}')
+        await message.delete()
+    except Exception as e:
+        logging.error(f"Failed to delete message: {e}")
+
+
+@dp.message_handler(content_types=ContentType.LEFT_CHAT_MEMBER)
+async def on_user_join(message: types.Message):
+    try:
+        logging.warning(f'User {message.from_user.id} joined chat {message.chat.id}')
+        await message.delete()
+    except Exception as e:
+        logging.error(f"Failed to delete message: {e}")
+
+
 # Функция для сохранения сообщения в базу данных
 async def save_message(db_pool, user_id):
     async with db_pool.acquire() as connection:
@@ -71,7 +89,9 @@ async def get_user(db_pool, user_id):
 async def create_user(db_pool, username, user_id):
     async with db_pool.acquire() as connection:
         try:
-            await connection.execute('INSERT INTO users_chatuser (id, username, user_id, created_at) VALUES ($3, $1, $2, $4)', username, user_id, uuid.uuid4(), datetime.datetime.now())
+            await connection.execute(
+                'INSERT INTO users_chatuser (id, username, user_id, created_at) VALUES ($3, $1, $2, $4)', username,
+                user_id, uuid.uuid4(), datetime.datetime.now())
         except Exception as e:
             logging.error(e)
 
