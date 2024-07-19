@@ -7,9 +7,9 @@ class MessageInline(admin.StackedInline):
     extra = 1
 
 class ChatUserAdmin(admin.ModelAdmin):
-    list_display = ('username', 'user_id', 'message_count')
+    list_display = ('username', 'first_name', 'last_name', 'user_id', 'message_count')
     list_filter = ('username',)
-    search_fields = ('username',)
+    search_fields = ('username', 'first_name')
     inlines = [MessageInline]
 
 
