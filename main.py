@@ -86,12 +86,18 @@ async def get_user(db_pool, user_id):
             return None
 
 
-async def create_user(db_pool, username, user_id):
+async def create_user(db_pool, username, user_id, fn, ln):
     async with db_pool.acquire() as connection:
         try:
             await connection.execute(
-                'INSERT INTO users_chatuser (id, username, user_id, created_at) VALUES ($3, $1, $2, $4)', username,
-                user_id, uuid.uuid4(), datetime.datetime.now())
+                'INSERT INTO users_chatuser (id, username, first_name, last_name, user_id, created_at) VALUES ($1, $2, $3, $4, $5, $6)',
+                uuid.uuid4(),
+                username,
+                fn,
+                ln,
+                user_id,
+                datetime.datetime.now()
+            )
         except Exception as e:
             logging.error(e)
 
@@ -102,8 +108,13 @@ async def handle_text_message(message: types.Message):
     db_pool = dp['db']
     user = await get_user(db_pool, message.from_user.id)
     if not user:
-        await create_user(db_pool, message.from_user.username, message.from_user.id)
+        await create_user(db_pool, message.from_user.username, message.from_user.id, message.from_user.first_name,
+                          message.from_user.last_name)
     user = await get_user(db_pool, message.from_user.id)
+
+    if not user:
+        logging.warning(f"User not found: {message.from_user.id}")
+        return
 
     await save_message(db_pool, user['id'])
 
