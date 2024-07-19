@@ -23,7 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = "django-insecure-4v0l$*o$y5uy9vgj)6pl^1es*pw!acsd8$)2r3fk1b@u+ahyiv"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
@@ -120,9 +120,12 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-# Настройки статических файлов
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+
+## Serving the STATIC FILES
+# as declared in NginX conf, it must match /opt/services/djangoapp/static/
+STATIC_ROOT = Path(BASE_DIR).joinpath("static")
 
 # Если вы используете файл для загрузки медиа файлов:
 MEDIA_URL = '/media/'
