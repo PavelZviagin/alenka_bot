@@ -10,7 +10,7 @@ from aiogram.utils import executor
 import asyncpg
 import asyncio
 
-API_TOKEN = '7298417124:AAHFNTgq1BY5WWTOdEWJhMGrGe3M7oSoRzI'
+API_TOKEN = '7419786460:AAGfm9c6UTMq7UIllikhbUQxg0vfGjD-5dU'
 ADMIN_ID = 700796749
 DB_HOST = 'postgres'
 DB_USER = 'postgres'
