@@ -1,4 +1,5 @@
 import logging
+import re
 import uuid
 import datetime
 
@@ -9,7 +10,8 @@ from aiogram.utils import executor
 import asyncpg
 import asyncio
 
-API_TOKEN = '7419786460:AAGfm9c6UTMq7UIllikhbUQxg0vfGjD-5dU'
+API_TOKEN = '7298417124:AAHFNTgq1BY5WWTOdEWJhMGrGe3M7oSoRzI'
+ADMIN_ID = 700796749
 DB_HOST = 'postgres'
 DB_USER = 'postgres'
 DB_PASSWORD = 'postgres'
@@ -22,6 +24,35 @@ logging.basicConfig(level=logging.INFO)
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
 dp.middleware.setup(LoggingMiddleware())
+
+# Регулярное выражение для поиска ссылок
+URL_REGEX = re.compile(
+    r"(https?://[^\s]+)|(www\.[^\s]+)"
+)
+
+SPAM_KW = [
+    'Эксклюзивное предложение',
+    'Без опыта ',
+    'дополнительный доход',
+    'Зарабатывайте',
+    'Доход',
+    'дополнительный доход',
+    'мгновенный доход',
+    'Легкий заработок',
+    'Бизнес на дому',
+    'работа на дому',
+    'Без затрат',
+    'Криптовалюта',
+    'Пассивный доход',
+    'Срочное предложение ',
+    'Ставки',
+    'Без затрат',
+    'Казино',
+    'Распродажа',
+    'Супер акция',
+    'Розыгрыш',
+    'Не упусти шанс',
+]
 
 
 # Функция для подключения к базе данных
@@ -102,6 +133,15 @@ async def create_user(db_pool, username, user_id, fn, ln):
             logging.error(e)
 
 
+def check_is_admin(message: types.Message):
+    return message.from_user.id == ADMIN_ID
+
+
+async def check_for_spam_keywords(message: types.Message):
+    # Проверка наличия ключевых слов в сообщении
+    if any(keyword.lower() in message.text.lower() for keyword in SPAM_KW):
+        await message.delete()
+
 # Обработчик всех текстовых сообщений
 @dp.message_handler(content_types=types.ContentType.TEXT)
 async def handle_text_message(message: types.Message):
@@ -117,6 +157,11 @@ async def handle_text_message(message: types.Message):
         return
 
     await save_message(db_pool, user['id'])
+
+    if not check_is_admin(message):
+        await check_for_spam_keywords(message)
+        if URL_REGEX.search(message.text) and not check_is_admin(message):
+            await message.delete()
 
 
 # Запуск бота
